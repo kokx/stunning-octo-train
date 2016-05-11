@@ -56,6 +56,7 @@ public class OpelTerminal {
                                     System.out.println("Card present and selected");
 
                                     print(sendKey((byte) 0x40));
+                                    print(sendKey((byte) 0x42));
 
                                     while (c.isCardPresent());
                                     break;

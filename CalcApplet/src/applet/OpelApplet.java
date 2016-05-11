@@ -11,6 +11,7 @@ import javacard.framework.service.*;
 public class OpelApplet extends Applet implements ISO7816 {
 
     private final static byte[] hello = { 'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'};
+    private final static byte[] hai = { 'H', 'a', 'i', ' ', 'h', 'a', 'i', ' ', 'h', 'a', 'i'};
 
     public OpelApplet() {
         register();
@@ -34,6 +35,12 @@ public class OpelApplet extends Applet implements ISO7816 {
             case 0x40:
                 Util.arrayCopy(
                         hello,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)11);
+                apdu.setOutgoingAndSend(
+                        ISO7816.OFFSET_CDATA,(byte) 11);
+                break;
+            case 0x42:
+                Util.arrayCopy(
+                        hai,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)11);
                 apdu.setOutgoingAndSend(
                         ISO7816.OFFSET_CDATA,(byte) 11);
                 break;
