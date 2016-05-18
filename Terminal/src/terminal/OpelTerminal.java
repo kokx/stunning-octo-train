@@ -23,6 +23,8 @@ public class OpelTerminal {
             (byte) 0x00, (byte) 0xA4, (byte) 0x04, (byte) 0x00, OPEL_APPLET_AID);
     
     boolean statusDoor = false;
+    
+    byte[] milleage = {'M', 'I', 'L'};
 
     CardChannel applet;
 
@@ -62,7 +64,20 @@ public class OpelTerminal {
                                     openDoor();
                                     openDoor();
                                     
-                                    while (c.isCardPresent());
+                                    startEngine();
+                                    
+                                    int startTime = (int)(System.currentTimeMillis()/100);
+                                    while (c.isCardPresent()){
+                                    	int passedTime = (int)(System.currentTimeMillis()/100)
+                                    		 - startTime;
+                                    	if (passedTime > 1){
+                                    		startTime = (int)(System.currentTimeMillis()/100);
+                                    		increaseMilleageTestData();
+                                    		updateMilleage();
+                                    	}
+                                    	
+                                    
+                                    };
                                     break;
                                 } catch (Exception e) {
                                     System.err.println("Card does not contain OpelApplet?!");
@@ -89,12 +104,41 @@ public class OpelTerminal {
         }
     }
     
+    void increaseMilleageTestData() {
+    	milleage[2]++;
+    	if(milleage[2] == 0x00) {
+    		milleage[1]++;
+    		if(milleage[1] == 0x00) {
+    		milleage[0]++;
+    		}
+    	}
+    }
+    
+    void updateMilleage(){
+    	byte[] data = {(byte) 0x00};
+    	//while (data[0] != 0x01){
+    		ResponseAPDU accept = send((byte) 0x46, milleage);
+    		data = accept.getData();
+    		print(accept);
+    	//}
+    }
+    
+    void startEngine(){
+    	byte[] data = {(byte) 0x00};
+    	while (data[0] != 0x01){
+    		ResponseAPDU accept = send((byte) 0x45, milleage);
+    		data = accept.getData();
+    		System.out.println(data[0]);
+    	}
+    }
+    
     void openDoor(){
     	ResponseAPDU carState = sendKey((byte) 0x44);
     	byte[] data = carState.getData();
     	int currentTime = (int)(System.currentTimeMillis()/1000);
     	int startTime = ((data[1]&0xFF) <<24 | (data[2]&0xFF) << 16 | (data[3]&0xFF) <<8 | (data[4]&0xFF) );
-    	int endTime = ((data[5]&0xFF) <<24 | (data[6]&0xFF) << 16 | (data[7]&0xFF) <<8 | (data[8]&0xFF) );
+    	int endTime = ((data[5]&0xFF) <<24 | (data[6]&0xFF) << 16 
+    		| (data[7]&0xFF) <<8 | (data[8]&0xFF) );
     	if (data[0] == 0x01 && startTime <= currentTime && endTime > currentTime ){
     		statusDoor = !statusDoor;
     	}
@@ -108,7 +152,7 @@ public class OpelTerminal {
     void print(ResponseAPDU apdu) {
         byte[] data = apdu.getData();
         for (byte d : data) {
-            System.out.print((char) d);
+            System.out.print((byte) d);
         }
         System.out.println();
         //int sw = apdu.getSW();
@@ -122,6 +166,15 @@ public class OpelTerminal {
 
     public ResponseAPDU sendKey(byte ins) {
         CommandAPDU apdu = new CommandAPDU(0, ins, 0, 0, 5);
+        try {
+            return applet.transmit(apdu);
+        } catch (CardException e) {
+            return null;
+        }
+    }
+    
+    public ResponseAPDU send(byte ins, byte[] data) {
+        CommandAPDU apdu = new CommandAPDU(0, ins, 0, 0, data);
         try {
             return applet.transmit(apdu);
         } catch (CardException e) {
