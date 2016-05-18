@@ -57,6 +57,7 @@ CalcApplet/jc-bin/applet/javacard/applet.cap: ${APPLETFILES}
 	# DONE
 
 Terminal/bin/%.class: Terminal/src/%.java
+	@mkdir -p Terminal/bin
 	javac -d Terminal/bin $^
 
 CalcApplet/jc-bin/%.class: CalcApplet/src/%.java
