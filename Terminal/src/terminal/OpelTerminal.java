@@ -21,6 +21,8 @@ public class OpelTerminal {
 
     static final CommandAPDU SELECT_APDU = new CommandAPDU(
             (byte) 0x00, (byte) 0xA4, (byte) 0x04, (byte) 0x00, OPEL_APPLET_AID);
+    
+    boolean statusDoor = false;
 
     CardChannel applet;
 
@@ -57,7 +59,9 @@ public class OpelTerminal {
 
                                     print(sendKey((byte) 0x40));
                                     print(sendKey((byte) 0x42));
-
+                                    openDoor();
+                                    openDoor();
+                                    
                                     while (c.isCardPresent());
                                     break;
                                 } catch (Exception e) {
@@ -83,6 +87,22 @@ public class OpelTerminal {
             System.out.println("ERROR: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    
+    void openDoor(){
+    	ResponseAPDU carState = sendKey((byte) 0x44);
+    	byte[] data = carState.getData();
+    	int currentTime = (int)(System.currentTimeMillis()/1000);
+    	int startTime = ((data[1]&0xFF) <<24 | (data[2]&0xFF) << 16 | (data[3]&0xFF) <<8 | (data[4]&0xFF) );
+    	int endTime = ((data[5]&0xFF) <<24 | (data[6]&0xFF) << 16 | (data[7]&0xFF) <<8 | (data[8]&0xFF) );
+    	if (data[0] == 0x01 && startTime <= currentTime && endTime > currentTime ){
+    		statusDoor = !statusDoor;
+    	}
+    	if (statusDoor){
+    		System.out.println("Open deur");
+    	} else {
+    		System.out.println("Sluit deur");
+    	}
     }
 
     void print(ResponseAPDU apdu) {
