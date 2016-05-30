@@ -14,7 +14,7 @@ import javax.smartcardio.TerminalFactory;
 /**
  * Opel corsa terminal.
  */
-public class OpelTerminal {
+public class ReturnCarTerminal {
 
     static final byte[] OPEL_APPLET_AID = { (byte) 0x3B, (byte) 0x29,
             (byte) 0x63, (byte) 0x61, (byte) 0x6C, (byte) 0x63, (byte) 0x02 };
@@ -28,7 +28,7 @@ public class OpelTerminal {
 
     CardChannel applet;
 
-    public OpelTerminal() {
+    public ReturnCarTerminal() {
         run();
     }
 
@@ -58,34 +58,9 @@ public class OpelTerminal {
                                     //setEnabled(true);
 
                                     System.out.println("Card present and selected");
-
-                                    print(sendKey((byte) 0x40));
-                                    print(sendKey((byte) 0x42));
-                                    loadCard();
-                                    openDoor();
-                                    openDoor();
-                                    
-                                    startEngine();
                                     
                                     returnCar();
-                                    
-                                    int startTime = (int)(System.currentTimeMillis()/100);
-				    int i = 0;
-                                    while (c.isCardPresent() && i<10){
-                                    	int passedTime = (int)(System.currentTimeMillis()/100)
-                                    		 - startTime;
-                                    	if (passedTime > 1){
-                                    		startTime = (int)(System.currentTimeMillis()/100);
-                                    		// increaseMilleageTestData is a testfunction 
-                                    		//to simulate the car sending his current millage.
-                                    		increaseMilleageTestData();
-                                    		updateMilleage();
-						i++;
-                                    	}
-                                    	
-                                    
-                                    };
-				    returnCar();
+                           
                                     break;
                                 } catch (Exception e) {
                                     System.err.println("Card does not contain OpelApplet?!");
@@ -112,42 +87,7 @@ public class OpelTerminal {
         }
     }
     
-    void increaseMilleageTestData() {
-    	milleage[2]++;
-    	if(milleage[2] == 0x00) {
-    		milleage[1]++;
-    		if(milleage[1] == 0x00) {
-    		milleage[0]++;
-    		}
-    	}
-    }
-    
-    void updateMilleage(){
-    	byte[] data = {(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00};
-    	while (data[3] != 0x01){
-    		ResponseAPDU accept = send((byte) 0x46, milleage);
-    		data = accept.getData();
-		System.out.println("Mileage was updated:");
-		System.out.print(data[0]);
-		System.out.print(data[1]);
-		System.out.print(data[2]);
-		System.out.println("");
-    	}
-    }
-    
-    void loadCard(){
-    	byte[] data = {(byte) 0x00};
-    	byte[] carID = {(byte)0x01,(byte) 0x57,
-    		(byte) 0x3C,(byte) 0x83,(byte) 0xD9,(byte) 0x57, (byte)0x5C,(byte) 0xBB,(byte) 0xE3};
-    	while (data[0] != 0x01){
-    		ResponseAPDU accept = send((byte) 0x47, carID);
-    		data = accept.getData();
-		int starttime = ((carID[1]&0xFF) <<24 | (carID[2]&0xFF) << 16 | (carID[3]&0xFF) <<8 | (carID[4]&0xFF) );
-		int endtime = ((carID[5]&0xFF) <<24 | (carID[6]&0xFF) << 16 | (carID[7]&0xFF) <<8 | (carID[8]&0xFF) );
-		System.out.println("Car " + carID[0] + " is loaded on your card from " + starttime + " till " +endtime);
-    	}
-    }
-    
+   
     void returnCar(){
 	ResponseAPDU apdu = sendKey((byte) 0x48);
     	byte[] data = apdu.getData();
@@ -156,33 +96,6 @@ public class OpelTerminal {
     	//print(sendKey((byte) 0x49)); 
     }
     
-    void startEngine(){
-    	byte[] data = {(byte) 0x00};
-    	while (data[0] != 0x01){
-    		ResponseAPDU accept = send((byte) 0x45, milleage);
-    		data = accept.getData();
-    		System.out.println(data[0]);
-    	}
-    }
-    
-    void openDoor(){
-    	ResponseAPDU carState = sendKey((byte) 0x44);
-    	byte[] data = carState.getData();
-    	int currentTime = (int)(System.currentTimeMillis()/1000);
-    	int startTime = ((data[1]&0xFF) <<24 | (data[2]&0xFF) << 16 | (data[3]&0xFF) <<8 | (data[4]&0xFF) );
-    	int endTime = ((data[5]&0xFF) <<24 | (data[6]&0xFF) << 16 
-    		| (data[7]&0xFF) <<8 | (data[8]&0xFF) );
-    	if (data[0] == 0x01 && startTime <= currentTime && endTime > currentTime ){
-    		statusDoor = !statusDoor;
-    	} else {
-    		System.out.println("Er is iets mis...");
-    	}
-    	if (statusDoor){
-    		System.out.println("Open deur");
-    	} else {
-    		System.out.println("Sluit deur");
-    	}
-    }
 
     void print(ResponseAPDU apdu) {
         byte[] data = apdu.getData();
@@ -211,6 +124,6 @@ public class OpelTerminal {
     }
 
     public static void main(String[] arg) {
-        new OpelTerminal();
+        new ReturnCarTerminal();
     }
 }

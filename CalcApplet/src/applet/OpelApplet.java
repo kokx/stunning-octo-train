@@ -10,10 +10,10 @@ import javacard.framework.service.*;
  */
 public class OpelApplet extends Applet implements ISO7816 {
 
-    private final static byte[] hello = { 'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'};
-    private final static byte[] hai = { 'H', 'a', 'i', ' ', 'h', 'a', 'i', ' ', 'h', 'a'};
-	private byte[] carID = {(byte)0x01,(byte) 0x57,(byte) 0x3C,(byte) 0x83,(byte) 0xD9,(byte) 0x57, (byte)0x5C,(byte) 0xBB,(byte) 0xE3};
-	
+	private final static byte[] hello = { 'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'};
+	private final static byte[] hai = { 'H', 'a', 'i', ' ', 'h', 'a', 'i', ' ', 'h', 'a'};
+	//private byte[] carID = {(byte)0x01,(byte) 0x57,(byte) 0x3C,(byte) 0x83,(byte) 0xD9,(byte) 0x57, (byte)0x5C,(byte) 0xBB,(byte) 0xE3};
+	byte[] carID = new byte[9];
 	private byte[] driveMilleage = {(byte) 0x00, (byte) 0x00, (byte) 0x00};
 	private byte[] carMilleage = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
 	
@@ -78,10 +78,7 @@ public class OpelApplet extends Applet implements ISO7816 {
 				int drive = ((driveMilleage[0]&0xFF) << 16 | (driveMilleage[1]&0xFF) <<8 |
 					 (driveMilleage[2]&0xFF) );
 				drive += test123;
-             	driveMilleage = new byte[] { (byte)(drive >>> 16), 
-             								(byte)(drive >>> 8), (byte) drive, accept2[0]};
-             	//driveMilleage[1] += buf[OFFSET_CDATA +1] - carMilleage[1];
-             	//driveMilleage[0] += buf[OFFSET_CDATA +0] - carMilleage[0];
+             	driveMilleage = new byte[] { (byte)(drive >>> 16),(byte)(drive >>> 8), (byte) drive, accept2[0]};
              	carMilleage[0] = buf[OFFSET_CDATA];
         		carMilleage[1] = buf[OFFSET_CDATA +1];
         		carMilleage[2] = buf[OFFSET_CDATA +2];
@@ -108,22 +105,23 @@ public class OpelApplet extends Applet implements ISO7816 {
                 break;
               case 0x48:
               	byte[] ticketMilleage = new byte[12];
+		ticketMilleage[0] = carID[0];
+		ticketMilleage[1] = carID[1];
+		ticketMilleage[2] = carID[2];
+		ticketMilleage[3] = carID[3];
+		ticketMilleage[4] = carID[4];
+		ticketMilleage[5] = carID[5];
+		ticketMilleage[6] = carID[6];
+		ticketMilleage[7] = carID[7];
+		ticketMilleage[8] = carID[8];
+		ticketMilleage[9] = driveMilleage[0];
+                ticketMilleage[10] = driveMilleage[1];
+                ticketMilleage[11] = driveMilleage[2];
+		carID = new byte[9];
                 Util.arrayCopy(
-                        carID,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)9);
-                buf[9] = driveMilleage[0];
-                buf[10] = driveMilleage[1];
-                buf[11] = driveMilleage[2];
+                        ticketMilleage,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)12);           
                 apdu.setOutgoingAndSend(
                         ISO7816.OFFSET_CDATA,(byte) 12);
-                break;
-              case 0x49:
-              //carID = {(byte)0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00, (byte)0x00,(byte) 0x00,(byte) 0x00};
-              carID = new byte[9];
-              byte[] accept5 = {0x01};
-                Util.arrayCopy(
-                        accept5,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)11);
-                apdu.setOutgoingAndSend(
-                        ISO7816.OFFSET_CDATA,(byte) 11);
                 break;
             default:
                 //ISOException.throwIt(ISO7816.SW_WRONG_INS) ;

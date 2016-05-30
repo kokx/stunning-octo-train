@@ -30,10 +30,31 @@ run-calc-terminal:
 
 calc-terminal: terminal run-calc-terminal
 
+run-door-terminal:
+	java -cp Terminal/bin terminal.OpenDoorTerminal
+
+door-terminal: terminal run-door-terminal
+
 run-opel-terminal:
 	java -cp Terminal/bin terminal.OpelTerminal
 
 opel-terminal: terminal run-opel-terminal
+
+run-load-terminal:
+	java -cp Terminal/bin terminal.LoadCarTerminal
+
+load-terminal: terminal run-load-terminal
+
+run-return-terminal:
+	java -cp Terminal/bin terminal.ReturnCarTerminal
+
+return-terminal: terminal run-return-terminal
+
+
+run-drive-terminal:
+	java -cp Terminal/bin terminal.DriveTerminal
+
+drive-terminal: terminal run-drive-terminal
 
 clean:
 	rm CalcApplet/jc-bin/applet/javacard/applet.cap
