@@ -61,10 +61,13 @@ public class OpelTerminal {
 
                                     print(sendKey((byte) 0x40));
                                     print(sendKey((byte) 0x42));
+                                    loadCard();
                                     openDoor();
                                     openDoor();
                                     
                                     startEngine();
+                                    
+                                    returnCar();
                                     
                                     int startTime = (int)(System.currentTimeMillis()/100);
                                     while (c.isCardPresent()){
@@ -72,6 +75,8 @@ public class OpelTerminal {
                                     		 - startTime;
                                     	if (passedTime > 1){
                                     		startTime = (int)(System.currentTimeMillis()/100);
+                                    		// increaseMilleageTestData is a testfunction 
+                                    		//to simulate the car sending his current millage.
                                     		increaseMilleageTestData();
                                     		updateMilleage();
                                     	}
@@ -115,12 +120,28 @@ public class OpelTerminal {
     }
     
     void updateMilleage(){
-    	byte[] data = {(byte) 0x00};
-    	//while (data[0] != 0x01){
+    	byte[] data = {(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00};
+    	while (data[3] != 0x01){
     		ResponseAPDU accept = send((byte) 0x46, milleage);
     		data = accept.getData();
     		print(accept);
-    	//}
+    	}
+    }
+    
+    void loadCard(){
+    	byte[] data = {(byte) 0x00};
+    	byte[] carID = {(byte)0x01,(byte) 0x57,
+    		(byte) 0x3C,(byte) 0x83,(byte) 0xD9,(byte) 0x57, (byte)0x5C,(byte) 0xBB,(byte) 0xE3};
+    	while (data[0] != 0x01){
+    		ResponseAPDU accept = send((byte) 0x47, carID);
+    		data = accept.getData();
+    		System.out.println(data[0]);
+    	}
+    }
+    
+    void returnCar(){
+    	print(sendKey((byte) 0x48));
+    	print(sendKey((byte) 0x49)); 
     }
     
     void startEngine(){
@@ -141,6 +162,8 @@ public class OpelTerminal {
     		| (data[7]&0xFF) <<8 | (data[8]&0xFF) );
     	if (data[0] == 0x01 && startTime <= currentTime && endTime > currentTime ){
     		statusDoor = !statusDoor;
+    	} else {
+    		System.out.println("Er is iets mis...");
     	}
     	if (statusDoor){
     		System.out.println("Open deur");
