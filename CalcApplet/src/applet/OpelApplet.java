@@ -12,8 +12,9 @@ public class OpelApplet extends Applet implements ISO7816 {
 
     //private byte[] carID = {(byte)0x01,(byte) 0x57,(byte) 0x3C,(byte) 0x83,(byte) 0xD9,(byte) 0x57, (byte)0x5C,(byte) 0xBB,(byte) 0xE3};
     private byte[] carID = new byte[9];
-    private byte[] driveMilleage = {(byte) 0x00, (byte) 0x00, (byte) 0x00};
-    private byte[] carMilleage = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+    private byte carMilleageInitialized = 0x00;
+    private byte[] carMilleage = {(byte) 0x00, (byte) 0x00, (byte) 0x00};
+    private byte[] endCarMilleage = {(byte) 0x00, (byte) 0x00, (byte) 0x00};
 
     public OpelApplet() {
         register();
@@ -41,31 +42,53 @@ public class OpelApplet extends Applet implements ISO7816 {
             // get the current car mileage from the terminal and acknowledge that the applet did
             // get the mileage
             case 0x45:
-                byte[] accept = {0x01};
-                carMilleage[0] = buf[OFFSET_CDATA];
-                carMilleage[1] = buf[OFFSET_CDATA +1];
-                carMilleage[2] = buf[OFFSET_CDATA +2];
-                Util.arrayCopy(
-                        accept,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)1);
-                apdu.setOutgoingAndSend(
-                        ISO7816.OFFSET_CDATA,(byte) 1);
+                if (carMilleageInitialized != 0x00) {
+                    break;
+                } else if (carMilleageInitialized == 0x00) {
+                    byte[] accept = {0x01};
+                    carMilleageInitialized = 0x01;
+                    carMilleage[0] = buf[OFFSET_CDATA];
+                    carMilleage[1] = buf[OFFSET_CDATA + 1];
+                    carMilleage[2] = buf[OFFSET_CDATA + 2];
+                    Util.arrayCopy(
+                            accept,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)1);
+                    apdu.setOutgoingAndSend(
+                            ISO7816.OFFSET_CDATA,(byte) 1);
+                }
                 break;
             case 0x46:
                 byte[] accept2 = {0x01};
-                int test123 =
-                    ((buf[OFFSET_CDATA ]&0xFF) << 16 | (buf[OFFSET_CDATA +1]&0xFF) <<8 |
-                     (buf[OFFSET_CDATA +2]&0xFF) ) -
-                    ((carMilleage[0]&0xFF) << 16 | (carMilleage[1]&0xFF) <<8 |
-                     (carMilleage[2]&0xFF) );
-                int drive = ((driveMilleage[0]&0xFF) << 16 | (driveMilleage[1]&0xFF) <<8 |
-                        (driveMilleage[2]&0xFF) );
-                drive += test123;
-                driveMilleage = new byte[] { (byte)(drive >>> 16),(byte)(drive >>> 8), (byte) drive, accept2[0]};
-                carMilleage[0] = buf[OFFSET_CDATA];
-                carMilleage[1] = buf[OFFSET_CDATA +1];
-                carMilleage[2] = buf[OFFSET_CDATA +2];
+
+                if (buf[OFFSET_CDATA] < endCarMilleage[0]) {
+                    // KAPOT
+                    endCarMilleage[0] = (byte) 0xFF;
+                    endCarMilleage[1] = (byte) 0xFF;
+                    endCarMilleage[2] = (byte) 0xFF;
+                    break;
+                } else if (buf[OFFSET_CDATA] == endCarMilleage[0]) {
+                    if (buf[OFFSET_CDATA + 1] < endCarMilleage[1]) {
+                        // KAPOT
+                        endCarMilleage[0] = (byte) 0xFF;
+                        endCarMilleage[1] = (byte) 0xFF;
+                        endCarMilleage[2] = (byte) 0xFF;
+                        break;
+                    } else if (buf[OFFSET_CDATA + 1] == endCarMilleage[1]) {
+                        if (buf[OFFSET_CDATA + 2] < endCarMilleage[2]) {
+                            // KAPOT
+                            endCarMilleage[0] = (byte) 0xFF;
+                            endCarMilleage[1] = (byte) 0xFF;
+                            endCarMilleage[2] = (byte) 0xFF;
+                            break;
+                        }
+                    }
+                }
+
+                endCarMilleage[0] = buf[OFFSET_CDATA];
+                endCarMilleage[1] = buf[OFFSET_CDATA +1];
+                endCarMilleage[2] = buf[OFFSET_CDATA +2];
+
                 Util.arrayCopy(
-                        driveMilleage,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)4);
+                        endCarMilleage,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)4);
                 apdu.setOutgoingAndSend(
                         ISO7816.OFFSET_CDATA,(byte) 4);
                 break;
@@ -96,9 +119,9 @@ public class OpelApplet extends Applet implements ISO7816 {
                 ticketMilleage[6] = carID[6];
                 ticketMilleage[7] = carID[7];
                 ticketMilleage[8] = carID[8];
-                ticketMilleage[9] = driveMilleage[0];
-                ticketMilleage[10] = driveMilleage[1];
-                ticketMilleage[11] = driveMilleage[2];
+                ticketMilleage[9] = endCarMilleage[0];
+                ticketMilleage[10] = endCarMilleage[1];
+                ticketMilleage[11] = endCarMilleage[2];
                 carID = new byte[9];
                 Util.arrayCopy(
                         ticketMilleage,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)12);
@@ -106,7 +129,7 @@ public class OpelApplet extends Applet implements ISO7816 {
                         ISO7816.OFFSET_CDATA,(byte) 12);
                 break;
             default:
-                ISOException.throwIt(ISO7816.SW_WRONG_INS);
+                //ISOException.throwIt(ISO7816.SW_WRONG_INS);
         }
     }
 }
