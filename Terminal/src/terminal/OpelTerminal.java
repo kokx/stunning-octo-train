@@ -21,9 +21,9 @@ public class OpelTerminal {
 
     static final CommandAPDU SELECT_APDU = new CommandAPDU(
             (byte) 0x00, (byte) 0xA4, (byte) 0x04, (byte) 0x00, OPEL_APPLET_AID);
-    
+
     boolean statusDoor = false;
-    
+
     byte[] milleage = {'M', 'I', 'L'};
 
     CardChannel applet;
@@ -64,31 +64,31 @@ public class OpelTerminal {
                                     loadCard();
                                     openDoor();
                                     openDoor();
-                                    
+
                                     startEngine();
-                                    
+
                                     returnCar();
-                                    
+
                                     int startTime = (int)(System.currentTimeMillis()/100);
-				    int i = 0;
+                                    int i = 0;
                                     while (c.isCardPresent() && i<10){
-                                    	int passedTime = (int)(System.currentTimeMillis()/100)
-                                    		 - startTime;
-                                    	if (passedTime > 1){
-                                    		startTime = (int)(System.currentTimeMillis()/100);
-                                    		// increaseMilleageTestData is a testfunction 
-                                    		//to simulate the car sending his current millage.
-                                    		increaseMilleageTestData();
-                                    		updateMilleage();
-						i++;
-                                    	}
-                                    	
-                                    
+                                        int passedTime = (int)(System.currentTimeMillis()/100)
+                                            - startTime;
+                                        if (passedTime > 1){
+                                            startTime = (int)(System.currentTimeMillis()/100);
+                                            // increaseMilleageTestData is a testfunction 
+                                            //to simulate the car sending his current millage.
+                                            increaseMilleageTestData();
+                                            updateMilleage();
+                                            i++;
+                                        }
+
+
                                     };
-				    returnCar();
+                                    returnCar();
                                     break;
                                 } catch (Exception e) {
-                                    System.err.println("Card does not contain OpelApplet?!");
+                                    System.err.println("Card does not contain OpelApplet?! " + e.getMessage());
                                     continue;
                                 }
                             } catch (CardException e) {
@@ -121,18 +121,18 @@ public class OpelTerminal {
     		}
     	}
     }
-    
+
     void updateMilleage(){
-    	byte[] data = {(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00};
-    	while (data[3] != 0x01){
-    		ResponseAPDU accept = send((byte) 0x46, milleage);
-    		data = accept.getData();
-		System.out.println("Mileage was updated:");
-		System.out.print(data[0]);
-		System.out.print(data[1]);
-		System.out.print(data[2]);
-		System.out.println("");
-    	}
+        byte[] data = {(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00};
+        while (data[3] != 0x01){
+            ResponseAPDU accept = send((byte) 0x46, milleage);
+            data = accept.getData();
+            System.out.println("Mileage was updated:");
+            System.out.print(data[0]);
+            System.out.print(data[1]);
+            System.out.print(data[2]);
+            System.out.println("");
+        }
     }
     
     void loadCard(){

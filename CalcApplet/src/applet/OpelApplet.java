@@ -45,11 +45,15 @@ public class OpelApplet extends Applet implements ISO7816 {
                 if (carMilleageInitialized != 0x00) {
                     break;
                 } else if (carMilleageInitialized == 0x00) {
+                    // first car start, since loaded
                     byte[] accept = {0x01};
                     carMilleageInitialized = 0x01;
                     carMilleage[0] = buf[OFFSET_CDATA];
                     carMilleage[1] = buf[OFFSET_CDATA + 1];
                     carMilleage[2] = buf[OFFSET_CDATA + 2];
+                    endCarMilleage[0] = carMilleage[0];
+                    endCarMilleage[1] = carMilleage[1];
+                    endCarMilleage[2] = carMilleage[2];
                     Util.arrayCopy(
                             accept,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)1);
                     apdu.setOutgoingAndSend(
@@ -57,6 +61,7 @@ public class OpelApplet extends Applet implements ISO7816 {
                 }
                 break;
             case 0x46:
+                // update mileage
                 byte[] accept2 = {0x01};
 
                 if (buf[OFFSET_CDATA] < endCarMilleage[0]) {
@@ -93,6 +98,7 @@ public class OpelApplet extends Applet implements ISO7816 {
                         ISO7816.OFFSET_CDATA,(byte) 4);
                 break;
             case 0x47:
+                // load a car
                 byte[] accept3 = {0x01};
                 carID[0] = buf[OFFSET_CDATA +0];
                 carID[1] = buf[OFFSET_CDATA +1];
@@ -103,12 +109,14 @@ public class OpelApplet extends Applet implements ISO7816 {
                 carID[6] = buf[OFFSET_CDATA +6];
                 carID[7] = buf[OFFSET_CDATA +7];
                 carID[8] = buf[OFFSET_CDATA +8];
+                carMilleageInitialized = (byte) 0x00;
                 Util.arrayCopy(
                         accept3,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)1);
                 apdu.setOutgoingAndSend(
                         ISO7816.OFFSET_CDATA,(byte) 1);
                 break;
               case 0x48:
+                // send mileage back
                 byte[] ticketMilleage = new byte[12];
                 ticketMilleage[0] = carID[0];
                 ticketMilleage[1] = carID[1];
