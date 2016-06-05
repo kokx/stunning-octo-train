@@ -32,7 +32,7 @@ public class OpelApplet extends Applet implements ISO7816 {
         switch(buf[ISO7816.OFFSET_INS])
         {
             // send the carID, start data and end data to the terminal,
-            // to verifie if we can open the car
+            // to verify if we can open the car
             case 0x44:
                 Util.arrayCopy(
                         carID,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)9);
