@@ -15,7 +15,12 @@ public class OpelApplet extends Applet implements ISO7816 {
     private byte carMilleageInitialized = 0x00;
     private byte[] carMilleage = {(byte) 0x00, (byte) 0x00, (byte) 0x00};
     private byte[] endCarMilleage = {(byte) 0x00, (byte) 0x00, (byte) 0x00};
-
+	private byte[] attempts = {(byte) 0x03};
+	//for now 4 times 0
+	private byte[] pin = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+	//TODO: make transient
+	private byte[] verified = JCSystem.makeTransientByteArray((short)1, JCSystem.CLEAR_ON_DESELECT);
+	
     public OpelApplet() {
         register();
     }
@@ -31,6 +36,21 @@ public class OpelApplet extends Applet implements ISO7816 {
 
         switch(buf[ISO7816.OFFSET_INS])
         {
+			//verify pincode
+			case 0x43:
+				verified[0] = (byte) 0x00;
+				if (!(pin[0] == buf[OFFSET_CDATA] && pin[1] == buf[OFFSET_CDATA + 1] &&
+					pin[2] == buf[OFFSET_CDATA + 2] && pin[3] == buf[OFFSET_CDATA + 3] &&
+					(attemps[0] == 0x01 || attemps[0] == 0x02 || attemps[0] == 0x03))) {
+					attempts[0]--;
+					verified[0] = (byte) 0x00;
+				} else {
+					verified[0] = (byte) 0x01;
+					attempts[0] = (byte) 0x03;
+				}
+				Util.arrayCopy(verified,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)1);
+                apdu.setOutgoingAndSend(ISO7816.OFFSET_CDATA,(byte) 1);
+				break;
             // send the carID, start data and end data to the terminal,
             // to verify if we can open the car
             case 0x44:

@@ -100,6 +100,11 @@ public class LoadCarTerminal {
     	}
     }
     
+	void verifyPin(){
+		byte[] pin = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00}
+		ResponseAPDU accept = send((byte) 0x43, pin);
+		print (accept);
+	}
  
     void print(ResponseAPDU apdu) {
         byte[] data = apdu.getData();
