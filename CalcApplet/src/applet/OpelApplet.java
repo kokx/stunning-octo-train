@@ -37,16 +37,24 @@ public class OpelApplet extends Applet implements ISO7816 {
         switch(buf[ISO7816.OFFSET_INS])
         {
 			//verify pincode
+			/* codes:
+			* 0x00 standard value and invalid pin
+			* 0x01 pin accepted
+			* 0x02 no valid number of attempts remaining
+			*/
 			case 0x43:
 				verified[0] = (byte) 0x00;
-				if (!(pin[0] == buf[OFFSET_CDATA] && pin[1] == buf[OFFSET_CDATA + 1] &&
-					pin[2] == buf[OFFSET_CDATA + 2] && pin[3] == buf[OFFSET_CDATA + 3] &&
-					(attempts[0] == 0x01 || attempts[0] == 0x02 || attempts[0] == 0x03))) {
-					attempts[0]--;
-					verified[0] = (byte) 0x00;
+				if(!(attempts[0] == 0x01 || attempts[0] == 0x02 || attempts[0] == 0x03)) {
+					verified[0] = (byte) 0x02;
 				} else {
-					verified[0] = (byte) 0x01;
-					attempts[0] = (byte) 0x03;
+					if (!(pin[0] == buf[OFFSET_CDATA] && pin[1] == buf[OFFSET_CDATA + 1] &&
+						pin[2] == buf[OFFSET_CDATA + 2] && pin[3] == buf[OFFSET_CDATA + 3])) {
+						attempts[0]--;
+						verified[0] = (byte) 0x00;
+					} else {
+						verified[0] = (byte) 0x01;
+						attempts[0] = (byte) 0x03;
+					}
 				}
 				Util.arrayCopy(verified,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)1);
                 apdu.setOutgoingAndSend(ISO7816.OFFSET_CDATA,(byte) 1);
@@ -82,7 +90,7 @@ public class OpelApplet extends Applet implements ISO7816 {
                 break;
             case 0x46:
                 // update mileage
-                byte[] accept2 = {0x01};
+                byte[] accept2 = {(byte) 0x01};
 
                 if (buf[OFFSET_CDATA] < endCarMilleage[0]) {
                     // KAPOT
@@ -119,17 +127,22 @@ public class OpelApplet extends Applet implements ISO7816 {
                 break;
             case 0x47:
                 // load a car
-                byte[] accept3 = {0x01};
-                carID[0] = buf[OFFSET_CDATA +0];
-                carID[1] = buf[OFFSET_CDATA +1];
-                carID[2] = buf[OFFSET_CDATA +2];
-                carID[3] = buf[OFFSET_CDATA +3];
-                carID[4] = buf[OFFSET_CDATA +4];
-                carID[5] = buf[OFFSET_CDATA +5];
-                carID[6] = buf[OFFSET_CDATA +6];
-                carID[7] = buf[OFFSET_CDATA +7];
-                carID[8] = buf[OFFSET_CDATA +8];
-                carMilleageInitialized = (byte) 0x00;
+				byte[] accept3 = {(byte) 0x02};
+				if(!(verified[0] == 0x01)) {
+					accept3[0] = (byte) 0x02;
+				} else {
+					accept3[0] = (byte) 0x01;
+					carID[0] = buf[OFFSET_CDATA +0];
+					carID[1] = buf[OFFSET_CDATA +1];
+					carID[2] = buf[OFFSET_CDATA +2];
+					carID[3] = buf[OFFSET_CDATA +3];
+					carID[4] = buf[OFFSET_CDATA +4];
+					carID[5] = buf[OFFSET_CDATA +5];
+					carID[6] = buf[OFFSET_CDATA +6];
+					carID[7] = buf[OFFSET_CDATA +7];
+					carID[8] = buf[OFFSET_CDATA +8];
+					carMilleageInitialized = (byte) 0x00;
+				}
                 Util.arrayCopy(
                         accept3,(byte)0,buf,ISO7816.OFFSET_CDATA,(byte)1);
                 apdu.setOutgoingAndSend(
