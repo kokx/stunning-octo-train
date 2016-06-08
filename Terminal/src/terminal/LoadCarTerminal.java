@@ -58,8 +58,8 @@ public class LoadCarTerminal {
                                     //setEnabled(true);
 
                                     System.out.println("Card present and selected");
-
-                                    loadCard();
+									testVerifyPin(c);
+                                    loadCard(c);
 
                                     break;
                                 } catch (Exception e) {
@@ -87,22 +87,56 @@ public class LoadCarTerminal {
         }
     }
     
-    void loadCard(){
+    void loadCard(CardTerminal c){
     	byte[] data = {(byte) 0x00};
     	byte[] carID = {(byte)0x01,(byte) 0x57,
     		(byte) 0x3C,(byte) 0x83,(byte) 0xD9,(byte) 0x57, (byte)0x5C,(byte) 0xBB,(byte) 0xE3};
-    	while (data[0] != 0x01){
+try{    	while (data[0] != 0x01 && data[0] != 0x02 && c.isCardPresent()){
+
     		ResponseAPDU accept = send((byte) 0x47, carID);
     		data = accept.getData();
 		int starttime = ((carID[1]&0xFF) <<24 | (carID[2]&0xFF) << 16 | (carID[3]&0xFF) <<8 | (carID[4]&0xFF) );
 		int endtime = ((carID[5]&0xFF) <<24 | (carID[6]&0xFF) << 16 | (carID[7]&0xFF) <<8 | (carID[8]&0xFF) );
-		System.out.println("Car " + carID[0] + " is loaded on your card from " + starttime + " till " +endtime);
-    	}
-    }
+		System.out.println("Car " + carID[0] + " is loaded on your card from " + starttime + " till " +endtime);}
+} catch (CardException e) {System.out.println(e);}
+    	
+		if(data[0] == 0x02) {
+			System.out.println("pin not verified");
+		}
+		if(data[0] == 0x01) {
+			System.out.println("car loaded onto card");
+		}
+}
     
-	void verifyPin(){
+	void testVerifyPin(CardTerminal c){
 		byte[] pin = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+		byte[] pin2 = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01};
 		ResponseAPDU accept = send((byte) 0x43, pin);
+		System.out.println("pin should be accepted thus 0x01");
+		print (accept);
+		System.out.println("try to load car after pin is verified");
+		loadCard(c);
+		System.out.println("remove card");
+try{		while(c.isCardPresent()) {}
+
+} catch (CardException e) {System.out.println(e);}
+		System.out.println("insert card");
+try{		while(!c.isCardPresent()) {}
+
+} catch (CardException e) {System.out.println(e);}
+		System.out.println("try to load car after reinjecting card \n pin should no longer be verified");
+		loadCard(c);
+		accept = send((byte) 0x43, pin2);
+		System.out.println("pin should be invalid attempt 1 thus 0x00");
+		print (accept);
+		accept = send((byte) 0x43, pin2);
+		System.out.println("pin should be invalid attempt 2 thus 0x00");
+		print (accept);
+		accept = send((byte) 0x43, pin2);
+		System.out.println("pin should be invalid attempt 3 thus 0x00");
+		print (accept);
+		accept = send((byte) 0x43, pin2);
+		System.out.println("pin limit should be exceeded thus 0x02");
 		print (accept);
 	}
  
