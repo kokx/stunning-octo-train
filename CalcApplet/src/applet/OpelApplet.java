@@ -41,7 +41,7 @@ public class OpelApplet extends Applet implements ISO7816 {
 				verified[0] = (byte) 0x00;
 				if (!(pin[0] == buf[OFFSET_CDATA] && pin[1] == buf[OFFSET_CDATA + 1] &&
 					pin[2] == buf[OFFSET_CDATA + 2] && pin[3] == buf[OFFSET_CDATA + 3] &&
-					(attemps[0] == 0x01 || attemps[0] == 0x02 || attemps[0] == 0x03))) {
+					(attempts[0] == 0x01 || attempts[0] == 0x02 || attempts[0] == 0x03))) {
 					attempts[0]--;
 					verified[0] = (byte) 0x00;
 				} else {
